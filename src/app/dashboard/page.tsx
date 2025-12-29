@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getHealthColor, getDailyBurnRate } from '@/lib/utils';
 import ProgressRing from '@/components/ProgressRing';
+import BudgetAlert from '@/components/BudgetAlert';
 
 interface DashboardData {
   budget: number;
@@ -223,6 +224,9 @@ export default function Dashboard() {
             ))}
           </select>
         </div>
+
+        {/* Budget Alert */}
+        <BudgetAlert spent={data.spent} budget={data.budget} remaining={data.remaining} />
 
         {/* Progress Ring */}
         <div className="bg-white rounded-2xl shadow-sm p-8 mb-6">

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { exportToCSV, exportToJSON, shareExpenses } from '@/lib/export';
 
 interface Expense {
   id: string;
@@ -21,6 +22,7 @@ const MONTHS = [
 function ExpenseListContent() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -88,19 +90,69 @@ function ExpenseListContent() {
 
   const totalAmount = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
+  function handleExport(format: 'csv' | 'json' | 'share') {
+    const monthName = MONTHS[month - 1];
+    
+    if (format === 'csv') {
+      exportToCSV(expenses, monthName, year);
+    } else if (format === 'json') {
+      exportToJSON(expenses, monthName, year);
+    } else {
+      shareExpenses(expenses, monthName, year);
+    }
+    
+    setShowExportMenu(false);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4">
-          <div className="flex items-center mb-2">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="mr-4 text-gray-600 hover:text-gray-900"
-            >
-              ← Back
-            </button>
-            <h1 className="text-xl font-bold text-gray-900">Expenses</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="mr-4 text-gray-600 hover:text-gray-900"
+              >
+                ← Back
+              </button>
+              <h1 className="text-xl font-bold text-gray-900">Expenses</h1>
+            </div>
+            
+            {expenses.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm px-3 py-2 rounded-lg hover:bg-blue-50"
+                >
+                  📥 Export
+                </button>
+                
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                    <button
+                      onClick={() => handleExport('csv')}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      📄 Export as CSV
+                    </button>
+                    <button
+                      onClick={() => handleExport('json')}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      📋 Export as JSON
+                    </button>
+                    <button
+                      onClick={() => handleExport('share')}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      📤 Share Summary
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <p className="text-sm text-gray-600 ml-11">
             {MONTHS[month - 1]} {year}
