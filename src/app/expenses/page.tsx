@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -13,14 +13,23 @@ interface Expense {
   created_at: string;
 }
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 export default function ExpenseList() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const month = Number(searchParams.get('month')) || new Date().getMonth() + 1;
+  const year = Number(searchParams.get('year')) || new Date().getFullYear();
 
   useEffect(() => {
     loadExpenses();
-  }, []);
+  }, [month, year]);
 
   async function loadExpenses() {
     try {
@@ -30,10 +39,8 @@ export default function ExpenseList() {
         return;
       }
 
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-      const firstDay = new Date(currentYear, currentMonth - 1, 1);
-      const lastDay = new Date(currentYear, currentMonth, 0);
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
 
       const { data, error } = await supabase
         .from('expenses')
@@ -79,31 +86,48 @@ export default function ExpenseList() {
     );
   }
 
+  const totalAmount = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mr-4 text-gray-600 hover:text-gray-900"
-          >
-            ← Back
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Monthly Expenses</h1>
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <div className="flex items-center mb-2">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="mr-4 text-gray-600 hover:text-gray-900"
+            >
+              ← Back
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">Expenses</h1>
+          </div>
+          <p className="text-sm text-gray-600 ml-11">
+            {MONTHS[month - 1]} {year}
+          </p>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
+        {/* Total Summary */}
+        {expenses.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-6 text-white mb-6">
+            <p className="text-sm opacity-90 mb-1">Total for {MONTHS[month - 1]}</p>
+            <p className="text-3xl font-bold">{formatCurrency(totalAmount)}</p>
+            <p className="text-sm opacity-75 mt-2">{expenses.length} expense{expenses.length > 1 ? 's' : ''}</p>
+          </div>
+        )}
+
         {expenses.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <div className="text-6xl mb-4">💸</div>
-            <p className="text-gray-600 mb-6">No expenses yet this month</p>
+            <p className="text-gray-600 mb-2">No expenses for {MONTHS[month - 1]}</p>
+            <p className="text-sm text-gray-500 mb-6">Start tracking by adding your first expense</p>
             <button
               onClick={() => router.push('/add-expense')}
               className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg active:scale-95 transition-transform"
             >
-              Add Your First Expense
+              Add Expense
             </button>
           </div>
         ) : (
