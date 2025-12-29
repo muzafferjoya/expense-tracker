@@ -318,7 +318,7 @@ export default function Dashboard() {
         {/* Action Buttons */}
         <div className="flex gap-3">
           <button
-            onClick={() => router.push('/add-expense')}
+            onClick={() => router.push(`/add-expense?month=${selectedMonth}&year=${selectedYear}`)}
             className="flex-1 bg-blue-600 text-white font-semibold py-4 px-6 rounded-xl shadow-lg active:scale-95 transition-transform"
           >
             + Add Expense

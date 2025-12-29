@@ -1,16 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
-export default function AddExpense() {
+function AddExpenseForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get month/year from URL params if available
+  const paramMonth = searchParams.get('month');
+  const paramYear = searchParams.get('year');
+  
+  // Set default date based on params or current date
+  const getDefaultDate = () => {
+    if (paramMonth && paramYear) {
+      // If coming from dashboard with specific month/year, use first day of that month
+      const year = parseInt(paramYear);
+      const month = parseInt(paramMonth);
+      return new Date(year, month - 1, 1).toISOString().split('T')[0];
+    }
+    // Otherwise use today's date
+    return new Date().toISOString().split('T')[0];
+  };
+
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getDefaultDate());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   // Date range: allow past 2 years and future 5 years
   const today = new Date();
@@ -147,5 +165,17 @@ export default function AddExpense() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AddExpense() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <AddExpenseForm />
+    </Suspense>
   );
 }
