@@ -9,12 +9,6 @@ export const metadata: Metadata = {
   description: 'Simple monthly expense tracker for Indian users',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   themeColor: '#2563eb',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Expense Tracker',
-  },
 };
 
 export default function RootLayout({
