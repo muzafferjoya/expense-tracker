@@ -23,13 +23,17 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [yearlyTotal, setYearlyTotal] = useState(0);
   const router = useRouter();
 
+  // Generate year options (current year - 2 to current year + 5)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 8 }, (_, i) => currentYear - 2 + i);
+
   useEffect(() => {
     loadDashboardData();
-  }, [selectedMonth]);
+  }, [selectedMonth, selectedYear]);
 
   async function loadDashboardData() {
     setLoading(true);
@@ -166,6 +170,21 @@ export default function Dashboard() {
             </select>
           </div>
 
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none bg-white"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <div className="text-6xl mb-4">🎯</div>
             <p className="text-gray-900 font-semibold text-xl mb-2">
@@ -219,7 +238,23 @@ export default function Dashboard() {
           >
             {MONTHS.map((month, index) => (
               <option key={index} value={index + 1}>
-                {month} {selectedYear}
+                {month}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Year Selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none bg-white"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
               </option>
             ))}
           </select>

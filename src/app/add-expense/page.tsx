@@ -12,6 +12,11 @@ export default function AddExpense() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // Date range: allow past 2 years and future 5 years
+  const today = new Date();
+  const minDate = new Date(today.getFullYear() - 2, 0, 1).toISOString().split('T')[0];
+  const maxDate = new Date(today.getFullYear() + 5, 11, 31).toISOString().split('T')[0];
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -105,9 +110,14 @@ export default function AddExpense() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              min={minDate}
+              max={maxDate}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
               disabled={loading}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              You can add expenses from {new Date().getFullYear() - 2} to {new Date().getFullYear() + 5}
+            </p>
           </div>
 
           {/* Note Input */}

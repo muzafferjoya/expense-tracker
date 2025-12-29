@@ -8,7 +8,17 @@ export default function Onboarding() {
   const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const router = useRouter();
+
+  const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 8 }, (_, i) => currentYear - 2 + i);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,8 +46,8 @@ export default function Onboarding() {
         .insert({
           user_id: user.id,
           amount: Number(budget),
-          month: currentMonth,
-          year: currentYear
+          month: selectedMonth,
+          year: selectedYear
         });
 
       if (insertError) throw insertError;
@@ -59,7 +69,7 @@ export default function Onboarding() {
             Set Your Budget
           </h1>
           <p className="text-gray-600">
-            How much do you want to spend this month?
+            Choose month and year, then set your budget
           </p>
         </div>
 
@@ -69,6 +79,46 @@ export default function Onboarding() {
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
+
+          {/* Month Selector */}
+          <div className="mb-4">
+            <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Month
+            </label>
+            <select
+              id="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+              disabled={loading}
+            >
+              {MONTHS.map((month, index) => (
+                <option key={index} value={index + 1}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year Selector */}
+          <div className="mb-6">
+            <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Year
+            </label>
+            <select
+              id="year"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+              disabled={loading}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="mb-8">
             <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
