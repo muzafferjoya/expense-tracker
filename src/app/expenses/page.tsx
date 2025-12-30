@@ -200,9 +200,9 @@ function ExpenseListContent() {
             {expenses.map((expense) => (
               <div
                 key={expense.id}
-                className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between"
+                className="bg-white rounded-xl shadow-sm p-4"
               >
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-center gap-3 mb-3">
                   {expense.categories && (
                     <div 
                       className="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
@@ -226,12 +226,22 @@ function ExpenseListContent() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(expense.id)}
-                  className="ml-4 text-red-600 hover:text-red-700 font-medium text-sm px-3 py-2 rounded-lg hover:bg-red-50 active:scale-95 transition-transform"
-                >
-                  Delete
-                </button>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push(`/edit-expense?id=${expense.id}`)}
+                    className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium text-sm py-2 px-4 rounded-lg active:scale-95 transition-all"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(expense.id)}
+                    className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 font-medium text-sm py-2 px-4 rounded-lg active:scale-95 transition-all"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
