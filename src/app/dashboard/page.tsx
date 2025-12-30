@@ -61,6 +61,8 @@ export default function Dashboard() {
           remaining: 0,
           dailyBurnRate: 0
         });
+        // Still load yearly total even if no budget
+        await loadYearlyTotal(user.id, selectedYear);
         setLoading(false);
         return;
       }
@@ -95,8 +97,8 @@ export default function Dashboard() {
         dailyBurnRate
       });
 
-      // Calculate yearly total
-      await loadYearlyTotal(user.id);
+      // Calculate yearly total for selected year - pass year as parameter
+      await loadYearlyTotal(user.id, selectedYear);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -104,11 +106,10 @@ export default function Dashboard() {
     }
   }
 
-  async function loadYearlyTotal(userId: string) {
+  async function loadYearlyTotal(userId: string, year: number) {
     try {
-      // Use selected year, not current year
-      const yearStart = `${selectedYear}-01-01`;
-      const yearEnd = `${selectedYear}-12-31`;
+      const yearStart = `${year}-01-01`;
+      const yearEnd = `${year}-12-31`;
 
       const { data: yearlyExpenses, error } = await supabase
         .from('expenses')
