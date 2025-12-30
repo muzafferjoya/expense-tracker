@@ -7,6 +7,9 @@ import { formatCurrency, getHealthColor, getDailyBurnRate } from '@/lib/utils';
 import ProgressRing from '@/components/ProgressRing';
 import BudgetAlert from '@/components/BudgetAlert';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
+import CategoryPieChart from '@/components/CategoryPieChart';
+import SpendingTrendChart from '@/components/SpendingTrendChart';
+import SpendingInsights from '@/components/SpendingInsights';
 
 interface DashboardData {
   budget: number;
@@ -24,6 +27,12 @@ interface CategorySpending {
   percentage: number;
 }
 
+interface DaySpending {
+  day: number;
+  amount: number;
+  date: string;
+}
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -36,6 +45,7 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [yearlyTotal, setYearlyTotal] = useState(0);
   const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([]);
+  const [dailySpending, setDailySpending] = useState<DaySpending[]>([]);
   const router = useRouter();
 
   // Generate year options (current year - 2 to current year + 5)
@@ -86,6 +96,7 @@ export default function Dashboard() {
         .from('expenses')
         .select(`
           amount,
+          expense_date,
           category_id,
           categories (
             id,
@@ -96,7 +107,8 @@ export default function Dashboard() {
         `)
         .eq('user_id', user.id)
         .gte('expense_date', firstDay.toISOString().split('T')[0])
-        .lte('expense_date', lastDay.toISOString().split('T')[0]);
+        .lte('expense_date', lastDay.toISOString().split('T')[0])
+        .order('expense_date', { ascending: true });
 
       if (expensesError) throw expensesError;
 
@@ -133,6 +145,29 @@ export default function Dashboard() {
         .sort((a, b) => b.total - a.total);
 
       setCategorySpending(categoryArray);
+
+      // Calculate daily spending for line chart
+      const daysInMonth = lastDay.getDate();
+      const dailyMap = new Map<number, number>();
+      
+      expensesData?.forEach((expense: any) => {
+        const day = new Date(expense.expense_date).getDate();
+        dailyMap.set(day, (dailyMap.get(day) || 0) + Number(expense.amount));
+      });
+
+      const dailyArray: DaySpending[] = [];
+      for (let i = 1; i <= daysInMonth; i++) {
+        dailyArray.push({
+          day: i,
+          amount: dailyMap.get(i) || 0,
+          date: new Date(selectedYear, selectedMonth - 1, i).toLocaleDateString('en-IN', { 
+            day: 'numeric', 
+            month: 'short' 
+          })
+        });
+      }
+      
+      setDailySpending(dailyArray);
       const budget = Number(budgetData.amount);
       const remaining = budget - totalSpent;
       
@@ -316,6 +351,35 @@ export default function Dashboard() {
 
         {/* Budget Alert */}
         <BudgetAlert spent={data.spent} budget={data.budget} remaining={data.remaining} />
+
+        {/* Smart Insights */}
+        <SpendingInsights
+          totalSpent={data.spent}
+          budget={data.budget}
+          topCategory={categorySpending[0] ? {
+            name: categorySpending[0].categoryName,
+            amount: categorySpending[0].total,
+            icon: categorySpending[0].categoryIcon
+          } : undefined}
+          daysRemaining={new Date(selectedYear, selectedMonth, 0).getDate() - new Date().getDate()}
+          avgDailySpend={data.dailyBurnRate}
+        />
+
+        {/* Pie Chart */}
+        <CategoryPieChart 
+          data={categorySpending.map(cat => ({
+            name: cat.categoryName,
+            value: cat.total,
+            color: cat.categoryColor,
+            icon: cat.categoryIcon
+          }))}
+        />
+
+        {/* Line Chart */}
+        <SpendingTrendChart 
+          data={dailySpending}
+          month={`${MONTHS[selectedMonth - 1]} ${selectedYear}`}
+        />
 
         {/* Category Breakdown */}
         <CategoryBreakdown spending={categorySpending} totalBudget={data.budget} />
