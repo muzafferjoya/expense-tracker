@@ -106,15 +106,16 @@ export default function Dashboard() {
 
   async function loadYearlyTotal(userId: string) {
     try {
-      const yearStart = new Date(selectedYear, 0, 1);
-      const yearEnd = new Date(selectedYear, 11, 31);
+      // Use selected year, not current year
+      const yearStart = `${selectedYear}-01-01`;
+      const yearEnd = `${selectedYear}-12-31`;
 
       const { data: yearlyExpenses, error } = await supabase
         .from('expenses')
         .select('amount')
         .eq('user_id', userId)
-        .gte('expense_date', yearStart.toISOString().split('T')[0])
-        .lte('expense_date', yearEnd.toISOString().split('T')[0]);
+        .gte('expense_date', yearStart)
+        .lte('expense_date', yearEnd);
 
       if (error) throw error;
 
