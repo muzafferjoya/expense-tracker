@@ -6,12 +6,22 @@ import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getHealthColor, getDailyBurnRate } from '@/lib/utils';
 import ProgressRing from '@/components/ProgressRing';
 import BudgetAlert from '@/components/BudgetAlert';
+import CategoryBreakdown from '@/components/CategoryBreakdown';
 
 interface DashboardData {
   budget: number;
   spent: number;
   remaining: number;
   dailyBurnRate: number;
+}
+
+interface CategorySpending {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  total: number;
+  percentage: number;
 }
 
 const MONTHS = [
@@ -25,6 +35,7 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [yearlyTotal, setYearlyTotal] = useState(0);
+  const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([]);
   const router = useRouter();
 
   // Generate year options (current year - 2 to current year + 5)
@@ -73,7 +84,16 @@ export default function Dashboard() {
 
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
-        .select('amount')
+        .select(`
+          amount,
+          category_id,
+          categories (
+            id,
+            name,
+            icon,
+            color
+          )
+        `)
         .eq('user_id', user.id)
         .gte('expense_date', firstDay.toISOString().split('T')[0])
         .lte('expense_date', lastDay.toISOString().split('T')[0]);
@@ -81,6 +101,38 @@ export default function Dashboard() {
       if (expensesError) throw expensesError;
 
       const totalSpent = expensesData?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+      
+      // Calculate category-wise spending
+      const categoryMap = new Map<string, CategorySpending>();
+      expensesData?.forEach((expense: any) => {
+        if (expense.categories) {
+          const catId = expense.category_id;
+          const existing = categoryMap.get(catId);
+          
+          if (existing) {
+            existing.total += Number(expense.amount);
+          } else {
+            categoryMap.set(catId, {
+              categoryId: catId,
+              categoryName: expense.categories.name,
+              categoryIcon: expense.categories.icon,
+              categoryColor: expense.categories.color,
+              total: Number(expense.amount),
+              percentage: 0
+            });
+          }
+        }
+      });
+
+      // Calculate percentages and sort by amount
+      const categoryArray = Array.from(categoryMap.values())
+        .map(cat => ({
+          ...cat,
+          percentage: (cat.total / totalSpent) * 100
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      setCategorySpending(categoryArray);
       const budget = Number(budgetData.amount);
       const remaining = budget - totalSpent;
       
@@ -264,6 +316,9 @@ export default function Dashboard() {
 
         {/* Budget Alert */}
         <BudgetAlert spent={data.spent} budget={data.budget} remaining={data.remaining} />
+
+        {/* Category Breakdown */}
+        <CategoryBreakdown spending={categorySpending} totalBudget={data.budget} />
 
         {/* Progress Ring */}
         <div className="bg-white rounded-2xl shadow-sm p-8 mb-6">

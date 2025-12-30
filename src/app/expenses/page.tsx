@@ -12,6 +12,12 @@ interface Expense {
   note: string | null;
   expense_date: string;
   created_at: string;
+  category_id: string | null;
+  categories?: {
+    name: string;
+    icon: string;
+    color: string;
+  } | null;
 }
 
 const MONTHS = [
@@ -46,7 +52,14 @@ function ExpenseListContent() {
 
       const { data, error } = await supabase
         .from('expenses')
-        .select('*')
+        .select(`
+          *,
+          categories (
+            name,
+            icon,
+            color
+          )
+        `)
         .eq('user_id', user.id)
         .gte('expense_date', firstDay.toISOString().split('T')[0])
         .lte('expense_date', lastDay.toISOString().split('T')[0])
@@ -189,16 +202,29 @@ function ExpenseListContent() {
                 key={expense.id}
                 className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between"
               >
-                <div className="flex-1">
-                  <p className="font-semibold text-lg text-gray-900">
-                    {formatCurrency(Number(expense.amount))}
-                  </p>
-                  {expense.note && (
-                    <p className="text-sm text-gray-600 mt-1">{expense.note}</p>
+                <div className="flex items-center gap-3 flex-1">
+                  {expense.categories && (
+                    <div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
+                      style={{ backgroundColor: `${expense.categories.color}20` }}
+                    >
+                      {expense.categories.icon}
+                    </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formatDate(expense.expense_date)}
-                  </p>
+                  <div className="flex-1">
+                    <p className="font-semibold text-lg text-gray-900">
+                      {formatCurrency(Number(expense.amount))}
+                    </p>
+                    {expense.categories && (
+                      <p className="text-xs text-gray-500">{expense.categories.name}</p>
+                    )}
+                    {expense.note && (
+                      <p className="text-sm text-gray-600 mt-1">{expense.note}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatDate(expense.expense_date)}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleDelete(expense.id)}

@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
 
 function AddExpenseForm() {
   const router = useRouter();
@@ -27,6 +34,8 @@ function AddExpenseForm() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(getDefaultDate());
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,6 +43,24 @@ function AddExpenseForm() {
   const today = new Date();
   const minDate = new Date(today.getFullYear() - 2, 0, 1).toISOString().split('T')[0];
   const maxDate = new Date(today.getFullYear() + 5, 11, 31).toISOString().split('T')[0];
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  async function loadCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +86,8 @@ function AddExpenseForm() {
           user_id: user.id,
           amount: Number(amount),
           note: note.trim() || null,
-          expense_date: date
+          expense_date: date,
+          category_id: categoryId || null
         });
 
       if (insertError) throw insertError;
@@ -116,6 +144,38 @@ function AddExpenseForm() {
                 disabled={loading}
               />
             </div>
+          </div>
+
+          {/* Category Selection */}
+          <div className="mb-6">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setCategoryId(category.id)}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    categoryId === category.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  disabled={loading}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{category.icon}</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {category.name}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {!categoryId && (
+              <p className="text-xs text-gray-500 mt-2">Optional: Select a category to organize expenses</p>
+            )}
           </div>
 
           {/* Date Input */}
